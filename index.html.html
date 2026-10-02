@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧸 苗の童裝店 - 現貨自助下單系統 🧸</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        * { box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; margin: 0; padding: 0; }
+        body { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #1e293b; padding-bottom: 100px; }
+
+        /* 頂部招牌 */
+        header {
+            background-color: #ffffff; padding: 20px; text-align: center;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.15); position: sticky; top: 0; z-index: 100;
+        }
+        header h1 { color: #0284c7; font-size: 2.2rem; font-weight: 900; letter-spacing: 1px; text-shadow: 1px 1px 0 #fff, 2px 2px 0 #bae6fd; }
+        .announcement { background: #fef08a; color: #b45309; font-weight: bold; padding: 8px 12px; font-size: 0.9rem; margin-top: 10px; border-radius: 20px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* 快捷通訊按鈕區 */
+        .line-channels { display: flex; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        .line-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 50px; font-weight: bold; font-size: 0.85rem; text-decoration: none; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.1); transition: transform 0.1s; }
+        .line-btn-oa { background: #06c755; } /* LINE 綠 */
+        .line-btn-community { background: #00b900; }
+        .line-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.1); }
+
+        /* 頁面切換大標籤 */
+        .nav-tabs {
+            display: flex; justify-content: center; gap: 15px; margin: 20px auto 10px auto; max-width: 500px; padding: 0 15px;
+        }
+        .nav-btn {
+            flex: 1; padding: 12px; font-size: 1.1rem; font-weight: 900; border: none; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 5px 0 #94a3b8; transition: all 0.1s; background: #cbd5e1; color: white;
+        }
+        .nav-btn.active {
+            background: #0284c7; box-shadow: 0 5px 0 #0369a1; transform: scale(1.05);
+        }
+        .nav-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #94a3b8; }
+
+        /* 頁面區塊隱藏/顯示邏輯 */
+        .page-view { display: none; }
+        .page-view.active { display: block; }
+
+        .container { max-width: 1200px; margin: 10px auto; padding: 0 15px; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 992px) { .container { grid-template-columns: 2.2fr 1fr; } }
+
+        /* 分類篩選列 */
+        .category-filter { display: flex; justify-content: flex-start; gap: 8px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 5px; }
+        .category-filter::-webkit-scrollbar { display: none; } /* 隱藏滾動條 */
+        .filter-chip { background: white; border: 2px solid #bae6fd; padding: 8px 16px; border-radius: 50px; font-weight: bold; font-size: 0.9rem; cursor: pointer; white-space: nowrap; color: #0284c7; box-shadow: 0 3px 0 #bae6fd; }
+        .filter-chip.active { background: #0284c7; color: white; border-color: #0284c7; box-shadow: 0 3px 0 #0369a1; }
+
+        /* 商品展示區 */
+        .main-content { display: flex; flex-direction: column; gap: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        
+        .product-card {
+            background: #fff; border-radius: 24px; padding: 15px; text-align: center;
+            box-shadow: 0 6px 15px rgba(14, 165, 233, 0.05); border: 3px solid #e0f2fe;
+            display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
+        }
+        
+        .spot-badge {
+            position: absolute; top: 10px; left: 10px; background: #2ed573; color: white;
+            font-size: 0.75rem; font-weight: bold; padding: 4px 10px; border-radius: 50px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 18px; margin-bottom: 12px; background: #f0fdfa;}
+        .product-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; text-align: left; min-height: 2.2rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-price { color: #ef4444; font-weight: 900; font-size: 1.3rem; margin-bottom: 10px; text-align: left;}
+        
+        .btn { border: none; padding: 10px 15px; border-radius: 30px; font-weight: bold; cursor: pointer; width: 100%; }
+        .add-btn { background: #0284c7; color: white; box-shadow: 0 4px 0 #0369a1; font-size: 1rem; transition: all 0.1s; }
+        .add-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #0369a1; }
+        .del-btn { background: #ef4444; color: white; font-size: 0.8rem; padding: 6px 10px; margin-top: 8px; border-radius: 12px; width: 100%; box-shadow: 0 2px 0 #b91c1c; }
+
+        /* 門閘解鎖區 */
+        .lock-screen { background: white; padding: 40px 20px; border-radius: 24px; border: 3px dashed #38bdf8; text-align: center; max-width: 400px; margin: 30px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
+        .password-box { display: flex; gap: 10px; max-width: 320px; margin: 20px auto 0 auto; }
+
+        /* 店長真正管理面板 */
+        .admin-real-panel { background: #1e293b; color: #fff; padding: 25px; border-radius: 24px; display: none; flex-direction: column; gap: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 900px; margin: 0 auto;}
+        .admin-real-panel h3 { color: #f59e0b; border-bottom: 2px dashed #475569; padding-bottom: 10px; }
+        .admin-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+        .admin-input { padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #334155; color: white; font-size: 0.9rem; width: 100%;}
+        .admin-select { padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #334155; color: white; font-size: 0.9rem; width: 100%; cursor: pointer; }
+        .admin-submit { background: #10b981; color: white; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; border: none; font-size: 1rem; width: 100%; box-shadow: 0 3px 0 #047857; }
+        .order-log-item { background: #334155; padding: 15px; border-radius: 16px; font-size: 0.9rem; margin-top: 10px; border-left: 6px solid #10b981; line-height: 1.6; color: #f8fafc; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; }
+        .copy-log-btn { background: #f59e0b; color: white; border: none; padding: 6px 14px; border-radius: 50px; font-weight: bold; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 0 #b45309; white-space: nowrap; }
+
+        /* 購物車側邊欄 */
+        .cart-panel { background: white; border-radius: 24px; padding: 20px; border: 3px solid #bae6fd; box-shadow: 0 10px 25px rgba(14, 165, 233, 0.1); align-self: start; }
+        .cart-title { font-size: 1.3rem; font-weight: 900; color: #0284c7; margin-bottom: 15px; border-bottom: 2px dashed #bae6fd; padding-bottom: 8px; display: flex; justify-content: space-between; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; text-align: left;}
+        .qty-control { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .qty-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #0284c7; background: white; color: #0284c7; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        /* 買家填寫表單區 */
+        .buyer-form-title { font-size: 0.95rem; font-weight: bold; color: #64748b; margin: 15px 0 8px 0; border-top: 1px solid #f1f5f9; padding-top: 12px; }
+        .buyer-input { width: 100%; padding: 10px 12px; border-radius: 12px; border: 2px solid #cbd5e1; margin-bottom: 10px; font-size: 0.9rem; outline: none; }
+        .buyer-input:focus { border-color: #0284c7; }
+
+        /* 結帳與限制機制 */
+        .total-section { margin-top: 15px; padding-top: 12px; border-top: 2px dashed #bae6fd; }
+        .total-row { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: 900; color: #1e293b; margin-bottom: 15px; }
+        .rule-warning { background: #fef2f2; border: 1px solid #fee2e2; color: #ef4444; padding: 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; margin-bottom: 15px; display: none; line-height: 1.4;}
+        
+        .pay-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .pay-radio { display: none; }
+        .pay-label { border: 2px solid #cbd5e1; border-radius: 14px; padding: 12px 15px; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; background: white;}
+        .pay-radio:checked + .pay-label { border-color: #0284c7; background-color: #f0f9ff; color: #0284c7; box-shadow: inset 0 0 0 1px #0284c7; }
+        .pay-label.disabled { background-color: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; opacity: 0.6; }
+        
+        .checkout-btn { width: 100%; background: #10b981; color: white; border: none; padding: 14px; font-size: 1.2rem; font-weight: 900; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 0 #047857; transition: all 0.1s; }
+        .checkout-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #047857; }
+
+        /* 定期跳動的底部現貨廣告標語 */
+        .marquee-footer {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #0284c7; color: #fef08a;
+            text-align: center; padding: 12px; font-weight: 900; font-size: 1.2rem; z-index: 90;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1); letter-spacing: 2px;
+            animation: pulseBanner 2s infinite ease-in-out;
+        }
+        @keyframes pulseBanner {
+            0% { background-color: #0284c7; color: #fef08a; }
+            50% { background-color: #0369a1; color: #ffffff; }
+            100% { background-color: #0284c7; color: #fef08a; }
+        }
+
+        /* 彈出視窗 */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 200; padding: 15px; }
+        .modal-box { background: white; padding: 30px; border-radius: 24px; max-width: 450px; width: 100%; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .modal-btn { margin-top: 20px; background: #0284c7; color: white; border: none; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🧸 苗の童裝店 🧸</h1>
+        <div class="announcement">📢 本店架上全為【現貨】快速出貨！預購商品請留意 LINE 社群通知。</div>
+        
+        <!-- 🔗 串接真實社群群組按鈕 -->
+        <div class="line-channels">
+            <a href="https://lin.ee/zKqYISx" target="_blank" class="line-btn line-btn-oa">💬 官方 LINE 客服</a>
+            <a href="https://line.me/ti/g2/Ib0cXoutYz0tE3yjhGZDZP8kjx5Y6-UOJnK4QA?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" target="_blank" class="line-btn line-btn-community">✨ 加入 LINE 預購社群</a>
+        </div>
+    </header>
+
+    <!-- 📱 頂部分頁切換 -->
+    <div class="nav-tabs">
+        <button id="tab-shop" class="nav-btn active" onclick="switchPage('shop')">🛍️ 逛逛現貨</button>
+        <button id="tab-admin" class="nav-btn" onclick="switchPage('admin')">🛠️ 店長後台</button>
+    </div>
+
+    <!-- 🛒 頁面 1：前台賣場 -->
+    <div id="page-shop-view" class="page-view active">
+        <div class="container">
+            <div class="main-content">
+                <!-- 自定義選單篩選晶片列 -->
+                <div class="category-filter" id="category-filter-bar">
+                    <button class="filter-chip active" onclick="filterCategory('全部童裝')">🌈 全部童裝</button>
+                    <button class="filter-chip" onclick="filterCategory('嬰兒包屁衣')">👶 嬰兒包屁衣</button>
+                    <button class="filter-chip" onclick="filterCategory('經典小套裝')">👕 經典小套裝</button>
+                    <button class="filter-chip" onclick="filterCategory('配件與萌帽')">👒 配件與萌帽</button>
+                </div>
+
+                <!-- 左側商品列表網格 -->
+                <div class="products-grid" id="product-list"></div>
+            </div>
+
+            <!-- 右側購物車與資料輸入 -->
+            <div class="cart-panel">
+                <div class="cart-title">
+                    <span>🛒 我的購物車</span>
+                    <span id="cart-count">0 件</span>
+                </div>
+                <div id="cart-items-container">
+                    <p style="color: #94a3b8; text-align: center; padding: 20px 0;">購物車空空的，快去挑選現貨童裝吧！</p>
+                </div>
+
+                <!-- 填寫資料欄位區 -->
+                <div class="buyer-form-title">📋 填寫收件人基本資料：</div>
+                <input type="text" id="buyer-name" class="buyer-input" placeholder="買家姓名 (例：王小美)">
+                <input type="tel" id="buyer-phone" class="buyer-input" placeholder="聯絡電話 (例：0912345678)">
+                <input type="text" id="buyer-address" class="buyer-input" placeholder="超商門市名稱 / 面交地點 / 寄送地址">
+
+                <div class="total-section">
+                    <div class="total-row">
+                        <span>總計金額:</span>
+                        <span id="total-price" style="color: #ef4444;">$0</span>
+                    </div>
+
+                    <div class="rule-warning" id="rule-warning">
+                        ⚠️ 提示：因單筆訂單購買金額已滿 $1,000，付款方式已自動限制為【銀行轉帳】，謝謝您的配合！
+                    </div>
+
+                    <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: #64748b;">💳 選擇付款方式：</div>
+                    <div class="pay-options">
+                        <input type="radio" name="payment" id="pay-cod" class="pay-radio" value="貨到付款" checked>
+                        <label for="pay-cod" class="pay-label" id="label-cod">📦 貨到付款 <span>(滿千停用)</span></label>
+
+                        <input type="radio" name="payment" id="pay-transfer" class="pay-radio" value="銀行轉帳">
+                        <label for="pay-transfer" class="pay-label" id="label-transfer">🏦 銀行轉帳 <span>(支援全額度)</span></label>
+
+                        <input type="radio" name="payment" id="pay-face" class="pay-radio" value="現場面交">
+                        <label for="pay-face" class="pay-label" id="label-face">🤝 現場面交 <span>(支援全額度)</span></label>
+                    </div>
+                    <button class="checkout-btn" onclick="processCheckout()">確認送出訂單 🚀</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🛠️ 頁面 2：店長後台頁面 -->
+    <div id="page-admin-view" class="page-view">
+        <!-- 門閘驗證區 -->
+        <div class="lock-screen" id="admin-gate">
+            <h3 style="color:#1e293b; margin-bottom: 5px;">🔑 店長身分驗證</h3>
+            <p style="font-size:0.85rem; color:#64748b;">請在下方輸入自訂的管理後台密碼</p>
+            <div class="password-box">
+                <input type="password" id="admin-pwd-input" class="admin-input" style="background:#fff; color:#333; border:2px solid #cbd5e1;" placeholder="輸入管理密碼">
+                <button class="btn add-btn" style="width:90px; padding:0; height:42px;" onclick="verifyAdminPassword()">解鎖</button>
+            </div>
+        </div>
+
+        <!-- 真正管理後台介面 -->
+        <div class="admin-real-panel" id="admin-main-panel">
+            <h3>🛠️ 苗の童裝店 - 後台商品與訂單管理</h3>
+            <div class="admin-form">
+                <div>
+                    <label style="font-size:0.85rem; display:block; margin-bottom:4px;">1. 商品名稱</label>
+                    <input type="text" id="new-title" class="admin-input" placeholder="例如：日系純棉小熊連身衣">
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; display:block; margin-bottom:4px;">2. 價格 (TWD)</label>
+                    <input type="number" id="new-price" class="admin-input" placeholder="450">
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; display:block; margin-bottom:4px;">3. 所屬自定義選單</label>
+                    <select id="new-category" class="admin-select">
+                        <option value="嬰兒包屁衣">👶 嬰兒包屁衣</option>
+                        <option value="經典小套裝">👕 經典小套裝</option>
+                        <option value="配件與萌帽">👒 配件與萌帽</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; display:block; margin-bottom:4px;">4. 商品圖片上傳</label>
+                    <input type="file" id="new-file" class="admin-input" accept="image/*">
+                </div>
+                <button class="admin-submit" onclick="addNewProduct()">🚀 發布現貨商品</button>
+            </div>
+            
+            <div style="margin-top: 25px;">
+                <h4 style="color:#10b981; margin-bottom: 8px; border-top: 1px dashed #475569; padding-top: 15px;">📥 顧客結單管理（含一鍵複製出貨工具）：</h4>
+                <div id="admin-orders-log">
+                    <p style="color:#94a3b8; font-size:0.85rem;">目前尚無新結單紀錄...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📌 底部現貨跳動橫幅公告 -->
+    <div class="marquee-footer">✨ 現貨火速供應中 ✨</div>
+
+    <!-- 結帳彈出回饋 -->
+    <div class="modal-overlay" id="success-modal">
+        <div class="modal-box">
+            <div style="font-size:3.5rem; text-align:center; margin-bottom:15px;">🎉</div>
+            <h2 style="color: #10b981; text-align:center; margin-bottom:15px;">訂單送出成功！</h2>
+            <p id="modal-summary" style="line-height: 1.6; color: #334155; font-size: 0.95rem;"></p>
+            <button class="modal-btn" onclick="closeModal()">我知道了</button>
+        </div>
+    </div>
+
+    <script>
+        // 🔒 1. 密碼自主設定區（店長可在引號內自訂密碼）
+        let adminPassword = "miao"; 
+
+        // 初始預設現貨衣服範例
+        let products = [
+            { id: 1, title: "🦕 有機棉恐龍雙口袋連身衣", price: 490, category: "嬰兒包屁衣", img: "https://images.unsplash.com/photo-1519457431-44ccd64a579b?w=400&q=80" },
+            { id: 2, title: "🐰 森林小兔綁帶蕾絲澎澎裙", price: 550, category: "經典小套裝", img: "https://images.unsplash.com/photo-1622290319146-7b63df48a635?w=400&q=80" },
+            { id: 3, title: "🐻 撞色燈芯絨小熊長袖吊帶褲", price: 680, category: "經典小套裝", img: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&q=80" },
+            { id: 4, title: "☀️ 抗UV撞色防風遮陽漁夫帽", price: 290, category: "配件與萌帽", img: "https://images.unsplash.com/photo-1533512930330-4ac257c86793?w=400&q=80" }
+        ];
+
+        let cart = {}; let orderHistory = []; let isAdmin = false; let currentFilter = "全部童裝";
+
+        // 分頁轉換開關
+        function switchPage(page) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+            if (page === 'shop') {
+                document.getElementById('page-shop-view').classList.add('active');
+                document.getElementById('tab-shop').classList.add('active');
+            } else if (page === 'admin') {
+                document.getElementById('page-admin-view').classList.add('active');
+                document.getElementById('tab-admin').classList.add('active');
+            }
+        }
+
+        // 密碼安全防護驗證
+        function verifyAdminPassword() {
+            const inputPwd = document.getElementById('admin-pwd-input').value;
+            if (inputPwd === adminPassword) {
+                isAdmin = true;
+                document.getElementById('admin-gate').style.display = 'none';
+                document.getElementById('admin-main-panel').style.display = 'flex';
+                displayProducts();
+            } else {
+                alert("❌ 店長密碼輸入錯誤，請重新確認！");
+            }
+        }
+
+        // 自定義選單過濾邏輯
+        function filterCategory(catName) {
+            currentFilter = catName;
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.innerText.includes(catName));
+            });
+            displayProducts();
+        }
+
+        // 新增商品上架
+        function addNewProduct() {
+            const title = document.getElementById('new-title').value.trim();
+            const price = parseInt(document.getElementById('new-price').value);
+            const category = document.getElementById('new-category').value;
+            const fileInput = document.getElementById('new-file');
+
+            if (!title || !price) { alert("請完整輸入商品名稱與價格！"); return; }
+            const defaultImg = "https://images.unsplash.com/photo-1471286174574-e9627710ee9b?w=400&q=80";
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) { pushProduct(title, price, category, e.target.result); }
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                pushProduct(title, price, category, defaultImg);
+            }
+        }
+
+        function pushProduct(title, price, category, imgData) {
+            products.push({ id: Date.now(), title: title, price: price, category: category, img: imgData });
+            displayProducts();
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-price').value = '';
+            document.getElementById('new-file').value = '';
+            alert(`✨ 商品成功上架至選單分類【${category}】！`);
+        }
+
+        function deleteProduct(id) {
+            products = products.filter(p => p.id !== id);
+            if(cart[id]) { delete cart[id]; updateCartUI(); }
+            displayProducts();
+        }
+
+        // 前台商品網格渲染
+        function displayProducts() {
+            const container = document.getElementById('product-list');
+            container.innerHTML = '';
+            
+            const filteredProducts = products.filter(p => currentFilter === "全部童裝" || p.category === currentFilter);
+
+            if(filteredProducts.length === 0) {
+                container.innerHTML = `<p style="grid-column: 1/-1; color:#94a3b8; padding:30px 0;">該分類目前沒有上架商品唷！</p>`;
+                return;
+            }
+
+            filteredProducts.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                const adminDeleteBtn = isAdmin ? `<button class="del-btn" onclick="deleteProduct(${p.id})">🗑️ 下架此商品</button>` : '';
+
+                card.innerHTML = `
+                    <div class="spot-badge">🔥 現貨</div>
+                    <img class="product-img" src="${p.img}" alt="商品" onerror="this.src='https://images.unsplash.com/photo-1471286174574-e9627710ee9b?w=400&q=80'">
+                    <div class="product-title">【現貨】${p.title}</div>
+                    <div>
+                        <div class="product-price">$${p.price}</div>
+                        <button class="btn add-btn" onclick="addToCart(${p.id})">加入購物車</button>
+                        ${adminDeleteBtn}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addToCart(id) {
+            if (cart[id]) { cart[id].qty++; } 
+            else { const product = products.find(p => p.id === id); cart[id] = { ...product, qty: 1 }; }
+            updateCartUI();
+        }
+
+        function changeQty(id, delta) {
+            if (!cart[id]) return;
+            cart[id].qty += delta;
+            if (cart[id].qty <= 0) { delete cart[id]; }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items-container');
+            container.innerHTML = '';
+            let total = 0, count = 0;
+            const cartKeys = Object.keys(cart);
+
+            if (cartKeys.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 20px 0;">購物車空空的，快去挑選現貨童裝吧！</p>';
+                document.getElementById('cart-count').innerText = "0 件";
+                document.getElementById('total-price').innerText = "$0";
+                resetPaymentOptions(); return;
+            }
+
+            cartKeys.forEach(id => {
+                const item = cart[id]; total += item.price * item.qty; count += item.qty;
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'cart-item';
+                itemDiv.innerHTML = `<div><strong>${item.title}</strong><div style="color: #ef4444; font-size:0.9rem;">$${item.price}</div><div class="qty-control"><button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button><span>${item.qty} 件</span><button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button></div></div><div style="font-weight: bold;">$${item.price * item.qty}</div>`;
+                container.appendChild(itemDiv);
+            });
+
+            document.getElementById('cart-count').innerText = `${count} 件`;
+            document.getElementById('total-price').innerText = `$${total}`;
+
+            // 👑 滿千機制鎖定
+            const warningEl = document.getElementById('rule-warning');
+            const codRadio = document.getElementById('pay-cod');
+            const transferRadio = document.getElementById('pay-transfer');
+
+            if (total >= 1000) {
+                warningEl.style.display = 'block';
+                document.getElementById('label-cod').className = 'pay-label disabled';
+                codRadio.disabled = true;
+                transferRadio.checked = true;
+            } else {
+                resetPaymentOptions();
+            }
+        }
+
+        function resetPaymentOptions() {
+            document.getElementById('rule-warning').style.display = 'none';
+            document.getElementById('label-cod').className = 'pay-label';
+            document.getElementById('pay-cod').disabled = false;
+        }
+
+        // 提交結單
+        function processCheckout() {
+            const cartKeys = Object.keys(cart);
+            const bName = document.getElementById('buyer-name').value.trim();
+            const bPhone = document.getElementById('buyer-phone').value.trim();
+            const bAddress = document.getElementById('buyer-address').value.trim();
+
+            if (cartKeys.length === 0) { alert('您的購物車內還沒有任何衣物唷！'); return; }
+            if (!bName || !bPhone || !bAddress) { alert('為了順利出貨，請填寫完整的收件人姓名、電話與超商/地址資訊！'); return; }
+
+            const payMethod = document.querySelector('input[name="payment"]:checked').value;
+            let total = 0; let itemSummary = [];
+            cartKeys.forEach(id => { total += cart[id].price * cart[id].qty; itemSummary.push(`${cart[id].title} (x${cart[id].qty})`); });
+
+            const orderId = 'MIAO' + Math.floor(Math.random() * 89999 + 10000);
+            const timeString = new Date().toLocaleString();
+
+            // 紀錄到後台
+            const orderData = { id: orderId, time: timeString, name: bName, phone: bPhone, address: bAddress, items: itemSummary.join(', '), total: total, pay: payMethod };
+            orderHistory.unshift(orderData);
+            updateAdminOrderLogUI();
+
+            let extraInstruction = '';
+            if (payMethod === "銀行轉帳") {
+                extraInstruction = `<br><br><span style="color:#ef4444; font-weight:bold;">🏦 轉帳小叮嚀：</span><br>請於24小時內匯款至以下帳戶：<br><b>【台灣銀行 (004)】<br>帳號：1234-5678-9012</b><br>匯款後請至官方 LINE 告知帳號後五碼核對唷！`;
+            } else if (payMethod === "貨到付款") {
+                extraInstruction = `<br><br>📦 <b>現貨將於 1-2 天內火速安排出貨</b>，包裹寄出後會發送通知。`;
+            } else if (payMethod === "現場面交") {
+                extraInstruction = `<br><br>🤝 <b>面交小叮嚀：</b><br>請保持手機暢通，店長苗苗會透過官方 LINE 與您約定具體交貨時間地點。`;
+            }
+
+            const summaryText = `<b>訂單編號：</b>${orderId}<br><b>收件姓名：</b>${bName}<br><b>結帳金額：</b><b style="color:#ef4444;">$${total}</b><br><b>付款管道：</b>${payMethod}${extraInstruction}`;
+            document.getElementById('modal-summary').innerHTML = summaryText;
+            document.getElementById('success-modal').style.display = 'flex';
+        }
+
+        // 🔥 核心：一鍵複製匯出顧客寄件資料小工具
+        function copyOrderToClipboard(index) {
+            const ord = orderHistory[index];
+            const textToCopy = `【苗の童裝店 - 訂單出貨單】
+-----------------------
+單號：${ord.id}
+時間：${ord.time}
+買家姓名：${ord.name}
+聯絡電話：${ord.phone}
+收件地址/門市：${ord.address}
+付款管道：${ord.pay}
+購買明細：${ord.items}
+應付金額：$${ord.total}
+-----------------------`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert(`📋 訂單 [${ord.id}] 的買家寄件與出貨明細已成功複製到剪貼簿！可直接貼上至超商或記事本出單。`);
+            }).catch(err => {
+                alert('複製失敗，請手動選取文字複製。');
+            });
+        }
+
+        function updateAdminOrderLogUI() {
+            const logContainer = document.getElementById('admin-orders-log');
+            if (orderHistory.length === 0) { return; }
+            logContainer.innerHTML = '';
+            orderHistory.forEach((ord, index) => {
+                const div = document.createElement('div');
+                div.className = 'order-log-item';
+                div.innerHTML = `
+                    <div style="flex: 1; min-width: 250px;">
+                        ⏱️ <b>時間：</b>${ord.time} | <b>單號：</b>${ord.id}<br>
+                        👤 <b>買家：</b>${ord.name} (${ord.phone})<br>
+                        📍 <b>門市/地址：</b>${ord.address}<br>
+                        🛍️ <b>明細：</b>${ord.items}<br>
+                        💰 <b>金額：</b><b>$${ord.total}</b> | <b>付款：</b><b style="color:#f59e0b;">${ord.pay}</b>
+                    </div>
+                    <button class="copy-log-btn" onclick="copyOrderToClipboard(${index})">📋 一鍵複製寄件資料</button>
+                `;
+                logContainer.appendChild(div);
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('success-modal').style.display = 'none';
+            cart = {};
+            document.getElementById('buyer-name').value = '';
+            document.getElementById('buyer-phone').value = '';
+            document.getElementById('buyer-address').value = '';
+            updateCartUI();
+        }
+
+        displayProducts();
+    </script>
+</body>
+</html>
